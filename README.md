@@ -5,3 +5,8 @@
 - 각 파일은 markdown 파일로 구성됩니다.
 - [elastic_search_docs_link](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
 
+
+#### Environment
+- docker 6.4.1(latest)
+- Elasticsearch, Kibana, Logstash
+

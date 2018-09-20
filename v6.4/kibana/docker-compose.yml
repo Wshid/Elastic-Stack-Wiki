@@ -1,0 +1,6 @@
+version: '2'
+services:
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.4.1 # kibana 이미지 사용
+    #volumes:
+    #  - ./kibana.yml:/usr/share/kibana/config/kibana.yml # 설정파일 매핑

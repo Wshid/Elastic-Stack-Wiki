@@ -1,0 +1,50 @@
+version: '2.2'
+services:
+  elasticsearch:
+    #image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.1
+    container_name: elasticsearch
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1 #ulimits soft=-1
+        hard: -1
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - esnet
+  elasticsearch2:
+    #image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.1
+    container_name: elasticsearch2
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" #xms : Heap Min Size, xmx : Heap Max size
+      - "discovery.zen.ping.unicast.hosts=elasticsearch"
+       # 유니캐스트 검색, https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-zen.html
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata2:/usr/share/elasticsearch/data
+    networks:
+      - esnet
+
+volumes:
+  esdata1:
+    driver: local
+  esdata2:
+    driver: local
+  # https://docs.docker.com/engine/reference/commandline/volume_create/#related-commands
+  # driver의 의미 : http://tech.cloudz-labs.io/posts/docker/volume/
+  # nfs, aws s3 등 다양한 드라이버 모듈이 존재할 수 있음
+
+networks:
+  esnet:

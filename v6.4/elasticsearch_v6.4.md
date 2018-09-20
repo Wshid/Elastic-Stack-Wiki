@@ -50,6 +50,8 @@
         {
             "name": "Sion Kim"
         }
+
+        
         GET /customer/_doc/1?pretty
         ```
         - index : customer, id = 1

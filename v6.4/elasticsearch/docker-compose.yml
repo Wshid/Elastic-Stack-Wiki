@@ -1,13 +1,20 @@
-version: '2.2'
+version: '3.1' # version 2, kibana가 localhost에수 구동되지 않음
 services:
   elasticsearch:
     #image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.1
     container_name: elasticsearch
+    hostname: elasticsearch # netowrks, esnet에서 elasticsearch라는 이름으로 호출 가능
     environment:
       - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "XPACK_SECURITY_ENABLED=false"
+      - "XPACK_GRAPH_ENABLE=false"
+      - "XPACK_WATCHER_ENABLED=false"
+      - "XPACK_ML_ENABLED=false"
+      - "XPACK_MONITORING_ENABLED=false"
+      - "XPACK_MONITORING_UI_CONTAINER_ELASTICSEARCH_ENABLED"
     ulimits:
       memlock:
         soft: -1 #ulimits soft=-1
@@ -22,12 +29,20 @@ services:
     #image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.1
     container_name: elasticsearch2
+    hostname: elasticsearch2
     environment:
       - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m" #xms : Heap Min Size, xmx : Heap Max size
       - "discovery.zen.ping.unicast.hosts=elasticsearch"
        # 유니캐스트 검색, https://www.elastic.co/guide/en/elasticsearch/reference/current/modules-discovery-zen.html
+      - "XPACK_SECURITY_ENABLED=false"
+      - "XPACK_GRAPH_ENABLE=false"
+      - "XPACK_WATCHER_ENABLED=false"
+      - "XPACK_ML_ENABLED=false"
+      - "XPACK_MONITORING_ENABLED=false"
+      - "XPACK_MONITORING_UI_CONTAINER_ELASTICSEARCH_ENABLED"
+      # xpack deprecated
     ulimits:
       memlock:
         soft: -1
@@ -36,6 +51,28 @@ services:
       - esdata2:/usr/share/elasticsearch/data
     networks:
       - esnet
+      # https://docs.docker.com/compose/networking/#specify-custom-networks
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.4.1 # kibana 이미지 사용
+    container_name: kibana
+    hostname: kibana
+    #network_mode: esnet
+    #network_mode: host # localhost 참조 가능
+    ports:
+      - "5601:5601"
+    networks:
+      - esnet
+    environment:
+      - "ELASTICSEARCH_URL=http://elasticsearch:9200"
+      # https://discuss.elastic.co/t/kibana-docker-image-doesnt-connect-to-elasticsearch-image/79511/4
+      # 키바나 컨테이너 안에서의 localhost는 kibana 자기 자신을 가르키게 됨.
+      # --net=host로 로컬을 당겨쓸수 있음(어댑터 변경)
+  #logstash:
+  #  hostname: logstash
+  #  container_name: logstash
+  #  network: esnet
+
+
 
 volumes:
   esdata1:

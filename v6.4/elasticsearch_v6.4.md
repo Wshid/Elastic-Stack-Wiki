@@ -391,6 +391,74 @@
         ```
         - 기본적으로 match_all 한결과에 filter가 적용된다.
         - 실제 위 쿼리에서 bool 하위에 match_all : {} 내용을 넣어도 결과는 같다.
+- Executing Aggregations
+    - SQL의 GROUP BY 절과 유사
+    - 네트워크 트래픽을 피하면서, 효율적 쿼리가 가능
+    - 구문
+        ```
+        GET /bank/_search
+        {
+        "size":0,
+        "aggs": {
+            "group_by_state": {
+            "terms": {
+                "field": "state.keyword"
+            }
+            }
+        }
+        }
+
+        # same 
+        # SELECT state, COUNT(*) FROM bank GROUP BY state ORDER BY COUNT(*) DESC LIMIT 10;
+
+        ```
+        - **size:0**
+            - _search를 했을때 본문 결과가 기록된다.
+                - hits.hits와 연관
+            - 해당 내용의 사이즈를 0으로 둠으로써, aggre 내용만 확인하게 된다.
+        - **group_by_state**
+            - 단순 field 이름
+            - SQL에서 AS <Field Name>과 동일
+    - 중첩 구문
+        - 해당 필드명, terms 하단에 추가적으로 기입하면 된다.
+        ```
+        GET /bank/_search/
+        {
+            "size":0,
+            "aggs":{
+                "group_by_state":{
+                    "terms": {
+                        "field": "state.keyword",
+                        "size": 10
+                    },
+                    "aggs": {
+                        "average_balance": {
+                            "avg": {
+                                "field": "balance"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        ```
+        - terms외에 range, avg등 여러가지 명령이 가능하다.
+        - [aggregation reference guide](https://www.elastic.co/guide/en/elasticsearch/reference/6.4/search-aggregations.html)
+        - aggregation의 4가지 유형
+            - Bucketing
+                - 각 bucket이 문서 기준과 연관되어 있음
+                - 연산의 결과는 해당 bucket 목록에 속하는 문서 집합 표시
+            - Metric
+                - 문서 집합에 대해서 연산
+            - Matrix
+                - 행렬 결과
+                - 여러 필드에서 작동, 문서 필드에서 추출한 값을 기반으로 함
+            - Pipeline
+                - 다른 집계 및 관련 메트릭의 출력 집계
+- Set up Elasticsearch
+    - 
+
+
 
 
 

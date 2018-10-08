@@ -59,7 +59,7 @@ services:
     #network_mode: esnet
     #network_mode: host # localhost 참조 가능
     ports:
-      - "5601:5601"
+      - 5601:5601
     networks:
       - esnet
     environment:
@@ -71,8 +71,6 @@ services:
   #  hostname: logstash
   #  container_name: logstash
   #  network: esnet
-
-
 
 volumes:
   esdata1:

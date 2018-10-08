@@ -381,7 +381,76 @@
             - 영구적으로 설정하려면, /etc/sysctl.conf에서 설정
                 - reboot후, ```sysctl vm.max_map_count`` 확인
         - RPM이나 Debian은 자동 설정되어 있음
-    
+    - Number of Threads
+        - ES user의 경우 최소 4096개의 Thread를 생성해야함
+        ```
+        ulimit -u 4096 # temp 설정
+        
+        OR
+
+        /etc/security/limits.conf # nproc to 4096
+        ```
+    - DNS Cache Settings
+        - ES는 기본적으로 Security Manager와 같이 실행 됨
+        - 접속하는 Host이름을 logging한다
+        - JVM에 따라 실행함
+        ```
+        networkaddress.cache.ttl=<timeout>
+        networkaddress.cache.negative.ttl=<timeout>
+        ```
+- Bootstrap Check
+    - ES는 시작시, Bootstrap의 검사를 받음
+    - 시스템 설정과 비교하여, ES의 작동에 안전한지 확인
+    - ES가 deployment 모드로 실행되었을 때, 모든 bootstrap log가 기록된다
+    - Deployment vs production mode
+        - ES는 기본적으로 loopback을 사용
+        - product mode에서는 loopback 주소를 사용할 필요가 없기 때문에 단일 노드 검색을 비활성화 해야함
+        - ES가 개발 모드를 판단하는 조건
+            - Loopback 주소를 통해, 다른 시스템과 클러스터를 형성할 수 없는 경우
+            - 비 Loopback을 가지고 클러스터 구성 가능시, production mode로 동작
+            - **http.port**, **transport.port** 옵션을 활용하여, 단일 노드로 활용할 수 있음
+    - Single-node discovery
+        - ```discovery.type=single-node```
+        - 전송 포트 검사
+        - 클러스터 연결 및 다른 노드와의 연결 없이 테스트 가능
+    - Forcing the bootstrap checks
+        - production mode에서 단일 노드시, 부트 스트랩 검사를 피할 수 있음
+            - 외부 인터페이스에 transport binding을 하지 않거나
+            - 외부 인터페이스 바인딩 및 single-node 설정
+        ```
+        es.enforce.bootstrap.checks=true
+
+        #JVM options
+        Des.enforce.bootstrap.checks=true # ES_JAVA_OPTS
+        ```
+        - 노드 구성과 독립적으로 부트 스트랩 검사를 강제 실행하는데에 사용
+    - Heap Size Check
+        - 초기 및 최대 Heap size가 다른 JVM 실행시, 힙의 크기가 조정되므로, 일시 중지될 수 있음
+        - 이 정지를 피하기 위해 **JVM Max Heap == Init Heap** 으로 해주는 것이 좋다
+        - **bootstrap.memory_lock** 활성시, JVM 시작시 힙의 초기 크기를 lock
+        - **Initial heap size != Max heap size**, resize시 모든 JVM이 메모리에 잠겨있는 경우가 없음
+    - File Descriptor check
+        - 유닉스의 개념, Everything is a file
+            - 물리적 파일, 가상 파일(/proc/loadavg 등), 네트워크 소켓 등
+        - ES는 많은 fd를 요구
+            - 모든 shard는 여러 segment로 이루어지고, 여러 파일로 이뤄짐
+        - bootstrap check는 OS X와 linux에서 강제됨
+    - Memory lock check
+        - JVM에서 major GC 발생시, heap에 있는 모든 페이지에 영향을 미침
+        - 페이지중 하나라도 disk로 swap out되면 메모리로 다시 swap 해야함
+        - 이로 인해, ES는 요청 처리시, 많은 디스크 사용
+        - swapping을 사용하지 않으려면
+            - mlockall(Unix) 또는 Virtual lock(Windows)를 사용, heap을 잠그도록 JVM에 요청
+            ```
+            bootstrap.memory_lock
+            ```
+        - ES에서는 힙을 잠글 수 없음
+            - ES의 유저의 설정이 **memlock unlimited** 되어 있을 것
+        - **bootstrap.memory_lock**이 활성화 되어야 함
+        
+
+
+
 
 
 

@@ -447,28 +447,61 @@
         - ES에서는 힙을 잠글 수 없음
             - ES의 유저의 설정이 **memlock unlimited** 되어 있을 것
         - **bootstrap.memory_lock**이 활성화 되어야 함
-        
-
-
-
-
-
-
-                                   
-
-
-
-
-
+    - Maximum number of threads check
+        - ES은 request를 단계를 나눈다.
+            - 해당 단계를 다른 thread pool에 넘김으로써, request를 실행
+        - ES는 많은 스레드를 생성할 수 있어야 함
+            - 최대 스레드 수 확인시, ES ps에 정상적인 사용상태의 충분한 thread 확인
+        - ```/etc/security/limits.conf```에서 4096 이상이 되도록 설정
+    - Max file size check
+        - 개별 shard의 구성요소인 segment file과 translog는 매우 용량이 커질 수 있음
+        - ES ps에서 작성할 수 있는 파일의 최대 크기가 제한되면, 그에 따른 쓰기 실패 에러 발생
+        - 가장 안전한 옵션
+            - 최대 파일 크기 = unlimited
+            - max file size bootstrap check enforces
+        - ```/etc/security/limits.conf```
+            - **fsize** : **unlimited**
+    - Maximum size virtual memory check
+        - ES와 Lucene mmap은 인덱스 일부를 ES 주소 공간에 매핑
+        - 특정 인덱스 데이터가 JVM Heap에서 제거 되지만,
+            - 메모리에 빠른 인덱스 가능
+        - 효과적이기 위해, ES 프로세스가 무제한 주소 공간을 가지게 해야함
+        - ```/etc/security/limits.conf```
+    - Maximum map count check
+        - mmap을 효과적으로 사용하기 위해 많은 memory-mapped areas가 필요
+        - kernel은 최소 262,144 memory-mapped area를 가질 수 있도록 해야함
+            - Linux에서만 적용
+        - ```vm.max_map_count``` 설정
+            - **sysctl**을 사용한다.
+    - Client JVM check
+        - OpenJDK
+            - Client JVM
+                - 시작시간 및 메모리 사용량에 맞춰 조정
+            - Server JVM
+                - 성능을 최대화하기 위해 조정
+        - JVM은 java bytecode에서 실행 가능한 머신 코드를 생성하기 위해, 다른 컴파일러를 사용
+        - 두 VM 간의 성능 차이가 상당할 수 있음
+        - Client JVM 검사는 ES가 Client JVM 내에서 실행되지 않도록 함
+        - Client JVM check를 하려면 Server JVM에서 ES를 시작해야 함
+        - 최신 시스템 및 운영체제는 서버 VM이 기본 값
+    - Use serial collector check
+        - Open-JDK 기반의 JVM에서는 다양한 작업 부하를 목표로 하는 GC가 존재
+        - Serial Collector
+            - single logical CPU
+            - ES에 권장되지 않음
+            - extremely small heaps
+        - ES에서 Serial Collector를 사용하지 않도록 설정해야함
+            - ```-XX:+UseSerialGC``` : 이와 같이 설정하지 않도록
+        - 기본 구성은 **CMS Collector**시용
+    - System call filter check
+        - ES는 운영 체제에 따라 다양한 형식의 system call filter 설치
+        - System call filter는 ES에서 임의 코드 실행 공격에 대한 방어 매커니즘
+            - forking과 관련된 시스템 호출을 실행하지 못하도록 설계
+        - system call filter check는 system call filter가 활성화 된 경우, 성공적으로 잘 설치되었는지 확인
+        - system call filter를 설치 못하게 하는 것을 제어해야함
+            - **log**확인
+        - ```bootstrap.system_call_fileter=false```
 
     
 
-
-
-
-
-
-
-
-
-
+    
